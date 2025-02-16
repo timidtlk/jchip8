@@ -5,6 +5,7 @@ import javax.swing.JFrame;
 
 import com.timidtlk.chip8.core.CPU;
 import com.timidtlk.chip8.core.Display;
+import com.timidtlk.chip8.core.InputHandler;
 import com.timidtlk.chip8.core.Panel;
 
 public class Main {
@@ -20,24 +21,28 @@ public class Main {
     }
 
     Main() {
-        InputStream romFile = getClass().getClassLoader().getResourceAsStream("1-chip8-logo.ch8");
+        InputStream romFile = getClass().getClassLoader().getResourceAsStream("3-corax+.ch8");
 
+        InputHandler input = new InputHandler();
         Display display = new Display();
-        CPU cpu = new CPU(romFile, display);
+        CPU cpu = new CPU(romFile, display, input);
         Panel panel = new Panel(display);
+        panel.addKeyListener(input);
+        panel.setFocusable(true);
 
         initializeWindow(panel);
 
-        while (true) {
-            try {
-                Thread.sleep(1);
+        try {
+            while (true) {
+                Thread.sleep(2);
                 cpu.tick();
                 panel.revalidate();
                 panel.repaint();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
             }
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
+        
     }
     public static void main(String[] args) {
         new Main();
