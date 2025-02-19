@@ -21,7 +21,7 @@ public class Main {
     }
 
     Main() {
-        InputStream romFile = getClass().getClassLoader().getResourceAsStream("3-corax+.ch8");
+        InputStream romFile = getClass().getClassLoader().getResourceAsStream("4-flags.ch8");
 
         InputHandler input = new InputHandler();
         Display display = new Display();

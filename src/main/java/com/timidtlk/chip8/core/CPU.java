@@ -8,13 +8,13 @@ import javax.sound.sampled.LineUnavailableException;
 public class CPU {
     private short program_counter;
     private short index_register;
-    private byte stack_pointer;
-    private byte[] memory;
-    private byte[] registers;
+    private short stack_pointer;
+    private short[] memory;
+    private short[] registers;
     private short[] stack;
 
-    private byte delay_timer;
-    private byte sound_timer;
+    private short delay_timer;
+    private short sound_timer;
 
     private Display display;
     private InputHandler input;
@@ -23,8 +23,8 @@ public class CPU {
         program_counter = 0x200;
         index_register = 0;
         stack_pointer = 0;
-        memory = new byte[4096];
-        registers = new byte[16];
+        memory = new short[4096];
+        registers = new short[16];
         stack = new short[16];
 
         delay_timer = 0;
@@ -46,7 +46,7 @@ public class CPU {
         try {
             int data;
             while ((data = romFile.read()) != -1) {
-                memory[program_counter++] = (byte) data;
+                memory[program_counter++] = (short) data;
             }
             program_counter = 0x200;
             romFile.close();
@@ -73,8 +73,9 @@ public class CPU {
 
     public void executeOpcode(short opcode) {
 
-        int x = (opcode & 0x0F00) >> 8;
-        int y = (opcode & 0x00F0) >> 4;
+        int x = ((opcode & 0x0F00) >> 8);
+        int y = ((opcode & 0x00F0) >> 4);
+        int vf;
 
         switch (opcode & 0xF000) {
             case 0x0000:
@@ -105,7 +106,7 @@ public class CPU {
                 if (registers[x] == registers[y]) program_counter += 2;
                 break;
             case 0x6000:
-                registers[x] = (byte) (opcode & 0xFF);
+                registers[x] = (short) (opcode & 0xFF);
                 break;
             case 0x7000:
                 registers[x] += (byte) (opcode & 0xFF);
@@ -116,34 +117,40 @@ public class CPU {
                         registers[x] = registers[y];
                         break;
                     case 0x1:
-                        registers[x] |= registers[y];
+                        registers[x] = (short)((registers[x] | registers[y]) & 0xFF);
                         break;
                     case 0x2:
-                        registers[x] &= registers[y];
+                        registers[x] = (short)((registers[x] & registers[y]) & 0xFF);
                         break;
                     case 0x3:
-                        registers[x] ^= registers[y];
+                        registers[x] = (short)((registers[x] ^ registers[y]) & 0xFF);;
                         break;
                     case 0x4:
                         int sum = registers[x] + registers[y];
-                        registers[0xF] = (byte) ((sum > 255) ? 1 : 0);
-                        registers[x] = (byte) (sum & 0xFF);
+                        vf = ((sum > 255) ? 1 : 0);
+                        registers[x] = (short) (sum & 0xFF);
+                        registers[0xF] = (byte) vf;
                         break;
                     case 0x5:
-                        registers[0xF] = (byte) ((registers[x] > registers[y]) ? 1 : 0);
+                        vf = ((registers[x] > registers[y]) ? 1 : 0);
                         registers[x] -= registers[y];
+                        registers[0xF] = (byte) vf;
                         break;
                     case 0x6:
-                        registers[0xF] = (byte) (registers[x] & 0x1);
+                        vf = (registers[x] & 0x1);
                         registers[x] >>= 1;
+                        registers[0xF] = (byte) vf;
                         break;
                     case 0x7:
-                        registers[0xF] = (byte) ((registers[y] > registers[x]) ? 1 : 0);
+                        vf = ((registers[y] > registers[x]) ? 1 : 0);
                         registers[y] -= registers[x];
+                        registers[0xF] = (byte) vf;
                         break;
                     case 0xE:
-                        registers[0xF] = (byte) ((registers[x] & 0x80) >> 7);
-                        registers[x] <<= 1;
+                        int vy = registers[y] << 1;
+                        registers[x] = (short)(vy & 0xFF);
+                        registers[0xF] = (short) (registers[y] & 0x80);
+                        registers[0xF] /= 0x80;
                         break;
                 }
             case 0x9000:
@@ -156,16 +163,16 @@ public class CPU {
                 program_counter = (short) (opcode & 0xFFF + registers[0]);
                 break;
             case 0xC000:
-                registers[x] = (byte)(Math.round(Math.random() * 0xFF) & (opcode & 0xFF));
+                registers[x] = (short)(Math.round(Math.random() * 0xFF) & (opcode & 0xFF));
                 break;
             case 0xD000:
-                byte width = 8;
-                byte height = (byte) (opcode & 0xF);
+                short width = 8;
+                short height = (short) (opcode & 0xF);
 
                 registers[0xF] = 0;
 
                 for (int i = 0; i < height; i++) {
-                    byte sprite = memory[index_register + i];
+                    short sprite = memory[index_register + i];
 
                     for (int j = 0; j < width; j++) {
                         if ((sprite & 0x80) > 0) {
@@ -204,7 +211,7 @@ public class CPU {
                             }
                         }
 
-                        if (isPressed) registers[x] = (byte) input.getPressedKey();
+                        if (isPressed) registers[x] = (short) input.getPressedKey();
                         else program_counter -= 2;
                         
                         break;
@@ -223,13 +230,13 @@ public class CPU {
                     case 0x33:
                         int value_u = registers[x] & 0xFF;
 
-                        memory[index_register + 2] = (byte) (value_u % 10);
+                        memory[index_register + 2] = (short) (value_u % 10);
     
                         value_u /= 10;
-                        memory[index_register + 1] = (byte) (value_u % 10);
+                        memory[index_register + 1] = (short) (value_u % 10);
 
                         value_u /= 10;
-                        memory[index_register] = (byte) (value_u % 10);
+                        memory[index_register] = (short) (value_u % 10);
                         break;
                     case 0x55:
                         for (int i = 0; i <= x; i++) {
@@ -237,8 +244,9 @@ public class CPU {
                         }
                         break;
                     case 0x65:
-                        for (int i = 0; i < x + 1; i++) {
-                            registers[i] = memory[index_register + i];                            
+                        for (int i = 0; i <= x; i++) {
+                            registers[i] = memory[index_register];
+                            index_register++;               
                         }
                         break;
                 }

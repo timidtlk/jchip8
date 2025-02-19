@@ -13,4 +13,13 @@
         <maven.compiler.target>22</maven.compiler.target>
     </properties>
 
+    <dependencies>
+
+        <dependency>
+            <groupId>org.jooq</groupId>
+            <artifactId>jooq</artifactId>
+            <version>3.19.18</version>
+        </dependency>
+
+    </dependencies>
 </project>
