@@ -21,7 +21,7 @@ public class Main {
     }
 
     Main() {
-        InputStream romFile = getClass().getClassLoader().getResourceAsStream("4-flags.ch8");
+        InputStream romFile = getClass().getClassLoader().getResourceAsStream("tetris.ch8");
 
         InputHandler input = new InputHandler();
         Display display = new Display();
@@ -34,7 +34,7 @@ public class Main {
 
         try {
             while (true) {
-                Thread.sleep(2);
+                Thread.sleep(5);
                 cpu.tick();
                 panel.revalidate();
                 panel.repaint();

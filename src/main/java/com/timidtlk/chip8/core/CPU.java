@@ -97,19 +97,19 @@ public class CPU {
                 program_counter = (short) (opcode & 0xFFF);
                 break;
             case 0x3000:
-                if (registers[x] == (opcode & 0xFF)) program_counter += 2;
+                if ((registers[x] & 0xFF) == (opcode & 0xFF)) program_counter += 2;
                 break;
             case 0x4000:
-                if (registers[x] != (opcode & 0xFF)) program_counter += 2;
+                if ((registers[x] & 0xFF) != (opcode & 0xFF)) program_counter += 2;
                 break;
             case 0x5000:
-                if (registers[x] == registers[y]) program_counter += 2;
+                if ((registers[x] & 0xFF) == (registers[y] & 0xFF)) program_counter += 2;
                 break;
             case 0x6000:
                 registers[x] = (short) (opcode & 0xFF);
                 break;
             case 0x7000:
-                registers[x] += (byte) (opcode & 0xFF);
+                registers[x] += (short) (opcode & 0xFF);
                 break;
             case 0x8000:
                 switch (opcode & 0xF) {
@@ -117,13 +117,13 @@ public class CPU {
                         registers[x] = registers[y];
                         break;
                     case 0x1:
-                        registers[x] = (short)((registers[x] | registers[y]) & 0xFF);
+                        registers[x] = (short)(((registers[x] & 0xFF) | (registers[y] & 0xFF)) & 0xFF);
                         break;
                     case 0x2:
-                        registers[x] = (short)((registers[x] & registers[y]) & 0xFF);
+                        registers[x] = (short)(((registers[x] & 0xFF) & (registers[y] & 0xFF)) & 0xFF);
                         break;
                     case 0x3:
-                        registers[x] = (short)((registers[x] ^ registers[y]) & 0xFF);;
+                        registers[x] = (short)(((registers[x] & 0xFF) ^ (registers[y] & 0xFF)) & 0xFF);
                         break;
                     case 0x4:
                         int sum = registers[x] + registers[y];
@@ -134,21 +134,25 @@ public class CPU {
                     case 0x5:
                         vf = ((registers[x] > registers[y]) ? 1 : 0);
                         registers[x] -= registers[y];
+                        registers[x] &= 0xFF;
                         registers[0xF] = (byte) vf;
                         break;
                     case 0x6:
                         vf = (registers[x] & 0x1);
                         registers[x] >>= 1;
+                        registers[x] &= 0xFF;
                         registers[0xF] = (byte) vf;
                         break;
                     case 0x7:
                         vf = ((registers[y] > registers[x]) ? 1 : 0);
-                        registers[y] -= registers[x];
+                        registers[x] = (short) ((registers[y] - registers[x]) & 0xFF);
+                        registers[x] &= 0xFF;
                         registers[0xF] = (byte) vf;
                         break;
                     case 0xE:
                         int vy = registers[y] << 1;
                         registers[x] = (short)(vy & 0xFF);
+                        registers[x] &= 0xFF;
                         registers[0xF] = (short) (registers[y] & 0x80);
                         registers[0xF] /= 0x80;
                         break;
@@ -164,19 +168,28 @@ public class CPU {
                 break;
             case 0xC000:
                 registers[x] = (short)(Math.round(Math.random() * 0xFF) & (opcode & 0xFF));
+                registers[x] &= 0xFF;
                 break;
             case 0xD000:
+                registers[0xF] = 0;
+
                 short width = 8;
                 short height = (short) (opcode & 0xF);
 
-                registers[0xF] = 0;
+                int registerX = registers[x] & 0xFF;
+                int registerY = registers[y] & 0xFF;
+
+                byte xPos = (byte) (registerX % display.WIDTH);
+                byte yPos = (byte) (registerY % display.HEIGHT);
 
                 for (int i = 0; i < height; i++) {
                     short sprite = memory[index_register + i];
 
                     for (int j = 0; j < width; j++) {
+                        if (yPos + i > 31) break;
                         if ((sprite & 0x80) > 0) {
-                            if (display.togglePixel(registers[x] + j, registers[y] + i)) {
+                            if (xPos + j > 63) break;
+                            if (display.togglePixel(xPos + j, yPos + i)) {
                                 registers[0xF] = 1;
                             }
                         }
