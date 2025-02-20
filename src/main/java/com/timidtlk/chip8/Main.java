@@ -21,7 +21,7 @@ public class Main {
     }
 
     Main() {
-        InputStream romFile = getClass().getClassLoader().getResourceAsStream("tetris.ch8");
+        InputStream romFile = getClass().getClassLoader().getResourceAsStream("pong.ch8");
 
         InputHandler input = new InputHandler();
         Display display = new Display();

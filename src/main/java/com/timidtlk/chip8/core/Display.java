@@ -20,11 +20,7 @@ public class Display {
     public boolean togglePixel(int x, int y) {
         pixels[y][x] = !pixels[y][x];
 
-        if (pixels[y][x] == false) {
-            return true;
-        } else {
-            return false;
-        }
+        return !pixels[y][x];
     }
     
     public void clearScreen() {
